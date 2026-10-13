@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Golf Course Simulator – Pinehurst, Pebble Beach, St Andrews and more</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Libre+Franklin:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9eee8;--card:#fbfcfa;--ink:#16241c;--mut:#5b6b61;--grn:#0f4a32;--line:#c9d3cb;--red:#b3261e;--gold:#b8921f;--sand:#e6d29a;--wat:#7fb5d9;--rough:#cfe0c6;--tree:#9db894;--fw:#b9d6a8;--gr:#8fcf86;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1511;--card:#17211b;--ink:#e6efe8;--mut:#93a69a;--grn:#5fbf8f;--line:#2b3a31;--red:#ff7a70;--gold:#e0b83a;--sand:#9a8a5a;--wat:#2f5f85;--rough:#1f3326;--tree:#13231a;--fw:#2c4a35;--gr:#3f7a4c}}
+:root[data-theme="dark"]{--bg:#0e1511;--card:#17211b;--ink:#e6efe8;--mut:#93a69a;--grn:#5fbf8f;--line:#2b3a31;--red:#ff7a70;--gold:#e0b83a;--sand:#9a8a5a;--wat:#2f5f85;--rough:#1f3326;--tree:#13231a;--fw:#2c4a35;--gr:#3f7a4c}
+*{box-sizing:inherit}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 'Libre Franklin',system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px 14px 40px}
+h1,h2{font-family:'Libre Caslon Text',Georgia,serif;margin:0}
+h1{font-size:1.9rem}h2{font-size:1.35rem}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
+.score{text-align:right;font-family:'Libre Caslon Text',Georgia,serif;font-size:2.4rem;line-height:1}
+.score small{display:block;font:600 .8rem 'Libre Franklin',sans-serif;color:var(--mut)}
+.neg{color:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:14px}
+.strip{display:grid;grid-template-columns:repeat(18,1fr);gap:2px;margin-bottom:14px}
+.strip div{text-align:center;font-size:.72rem;padding:3px 0;border:1px solid var(--line);background:var(--card);border-radius:2px;min-height:34px}
+.strip b{display:block;color:var(--mut);font-weight:400}
+.strip .cur{border-color:var(--grn);outline:2px solid var(--grn)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:12px 0}
+.grid span{display:block;color:var(--mut);font-size:.82rem}
+.grid .w{grid-column:1/-1}
+.bags{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}.bags .opt{margin-top:0}
+ul{margin:6px 0 0;padding-left:20px}
+.opt{display:block;width:100%;text-align:left;background:var(--card);color:var(--ink);border:1px solid var(--line);border-left:5px solid var(--grn);border-radius:4px;padding:11px 13px;margin-top:9px;font:inherit;cursor:pointer}
+.opt:hover{background:var(--bg)}.opt:focus-visible,input:focus-visible,.go:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.opt b{display:block}.opt small{color:var(--mut);font-size:.9rem}
+.cu{display:flex;gap:8px;margin-top:9px}
+input{flex:1;min-width:0;font:inherit;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)}
+.go{background:var(--grn);color:var(--card);border:0;border-radius:4px;padding:10px 18px;font:600 1rem 'Libre Franklin',sans-serif;cursor:pointer}
+.res{border-left:5px solid var(--gold)}
+.res p{margin:.3em 0}
+.sum{font-weight:600;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:10px}td,th{border-bottom:1px solid var(--line);padding:5px;text-align:center}
+@media(max-width:560px){.strip{grid-template-columns:repeat(9,1fr)}}
+@media(prefers-reduced-motion:no-preference){.res{animation:in .4s}@keyframes in{from{opacity:0}to{opacity:1}}}
+</style></head><body><main id="app"></main>
+<script>
+const mk=(p,y,e,n)=>p.map((x,i)=>['',x,y[i],e[i],n[i]||'']);
+const PIN=mk([4,4,4,4,5,3,4,4,3,5,4,4,4,4,3,4,3,4],[395,504,387,528,588,228,426,488,184,617,482,486,381,472,197,530,207,448],[0,5,-5,5,0,-5,3,-8,0,-10,5,0,12,-5,0,-5,3,8],
+{1:'Slight dogleg; played as the hardest hole in recent U.S. Opens',4:'Par 5 with a crowned, domed green',5:'Long par 3 to a domed green; misses run off into collection areas',8:'Short par 3; the green tends to funnel balls toward the hole',9:'Longest hole on the course, a gentle dogleg left',12:'Uphill approach: better to be long than short',15:'The only water on the course is a pond well off the tee, not really in play',17:'Closing par 4 to a domed green'});
+const PEB=mk([4,4,4,4,3,5,3,4,4,4,4,3,4,5,4,4,3,5],[380,516,404,331,195,523,109,428,526,495,390,202,445,580,397,403,208,543],[5,-10,0,-5,-5,30,-5,-20,-10,-40,10,0,5,10,0,-5,0,-5],
+{3:'Begins the stretch of holes along the ocean',4:'Shallow green exposed to the wind; safe miss is left-center',6:'Tiny par 3 to a green ringed by ocean',7:'The second shot plays across a chasm',13:'Among the toughest par 5s in major golf',17:'Ocean runs down the left; two trees guard the fairway center'});
+const STA=mk([4,4,4,4,5,4,4,3,4,4,3,4,4,5,4,4,4,4],[376,453,397,480,568,412,371,175,352,386,174,348,465,618,455,423,495,357],new Array(18).fill(0),
+{4:'Big shared double green (with the 13th)',13:'Hell Bunker lurks in the second-shot landing area',16:'The Road Hole: a deep bunker front-left of the green and the road behind',17:'Home hole: wide fairway and the Valley of Sin short of the green'});
+const GEN={pine:'Domed, crowned green: approaches that miss run off into collection areas',peb:'Small, firm greens; wind and the sea decide the club',sta:'Firm, wide links fairway with pot bunkers; wind decides everything'};
+PIN.forEach(r=>r[4]=r[4]||GEN.pine);PEB.forEach(r=>r[4]=r[4]||GEN.peb);STA.forEach(r=>r[4]=r[4]||GEN.sta);
+const OAK=mk([4,4,4,5,4,3,4,3,4,4,4,5,3,4,4,3,4,4],[488,346,462,611,408,200,485,289,472,461,400,632,182,379,507,236,312,502],[0,-5,5,0,-5,5,10,0,15,-10,0,0,5,-5,0,5,-5,10],
+{0:'A famously tough opening par 4',2:'The Church Pews bunker field lies between the 3rd and 4th fairways',7:'The longest par 3 in major championship history',8:'Plays as a par 5 for members; a ditch left and pot bunkers right',11:'A true three-shot par 5',12:'The shortest par 3 and usually the easiest',16:'Short par 4 that some players try to drive',17:'A tough closing par 4'});
+const BETH=mk([4,4,3,5,4,4,4,3,4,4,4,4,5,3,4,4,3,4],[397,389,210,517,478,408,524,210,460,502,435,496,608,161,477,490,179,411],[0,5,-5,-10,0,5,-5,0,5,-5,5,0,5,-5,0,5,0,5],
+{3:'Par 5 with a cross-bunker that tests the drive',6:'Plays longer than its yardage because of the turn of the hole',9:'The hardest hole on the card',13:'The shortest hole on the course and the best birdie chance',17:'Narrow, arrow-straight closer with grassy bunkers on both sides'});
+const PV=mk([4,4,3,4,3,4,5,4,4,3,4,4,4,3,5,4,4,4],[421,368,198,499,238,438,636,326,458,161,397,358,486,210,615,475,414,483],[5,-5,0,10,-15,5,-20,0,10,-5,0,5,10,-10,0,5,10,-5],
+{4:'Par 3 with a carry over water to the green',6:"Hell's Half Acre: a huge sand waste in the middle of the fairway",13:'Par 3 with a carry over water',9:'Short par 3 to a small green'});
+const G2={oak:'Deep bunkers and very fast, sloped greens',beth:'Deep, scalloped bunkers and thick rough on narrow fairways',pv:'Sandy waste and scrub guard the fairway islands'};
+OAK.forEach(r=>r[4]=r[4]||G2.oak);BETH.forEach(r=>r[4]=r[4]||G2.beth);PV.forEach(r=>r[4]=r[4]||G2.pv);
+const COURSES=[
+{id:'aug',name:'Augusta National',loc:'Augusta, Georgia',seed:11,tx:40,tl:'Trees',wr:[3,15],t:[52,66],sky:['clear','clear','partly cloudy','high overcast'],when:'7:42 AM',blurb:'Pines, fast greens, and the creeks of Amen Corner',h:[['Tea Olive',4,445,25,'Deep fairway bunker left (~300y); pines right; two-tier green with bunkers short-left and right'],
+['Pink Dogwood',5,575,-80,'Right-side fairway bunkers (~300y); pines pinch the fairway bend; deep bunker right of green'],
+['Flowering Peach',4,350,-10,'Fairway bunkers right; green ridge splits it; bunkers front and back'],
+['Flowering Crab Apple',3,240,-5,'Long carry; three bunkers guard the front-right; deep green with big contours'],
+['Magnolia',4,495,5,'Bunkers left of the landing zone; trees right; bunkers guard green'],
+['Juniper',3,180,-30,'Downhill par 3; shallow, sloped green; bunkers behind; fast putts'],
+['Pampas',4,450,15,'Narrow tree-lined fairway; small elevated green ringed by bunkers'],
+['Yellow Jasmine',5,570,30,'Uphill all the way; fairway bunkers right; green pitched back to front'],
+['Carolina Cherry',4,460,-35,'Drive hugs the left side; sloped green; a miss short rolls far back'],
+['Camellia',4,495,-110,'Steep downhill; trees left and right; green falls to the front left pond-side'],
+['White Dogwood',4,520,-10,'Water short-left of the green; bunker right; trees both sides'],
+['Golden Bell',3,155,0,"Rae's Creek in front; swirling wind; three bunkers; shallow green"],
+['Azalea',5,510,-15,"Creek bends along the left and fronts the green; bunkers behind"],
+['Chinese Fir',4,440,25,'Fairway bunkers right; uphill approach to a contoured green; no bunkers front'],
+['Firethorn',5,530,-35,'Pond fronts the green; bunkers behind; the fairway dips down'],
+['Redbud',3,170,-10,'Pond fronts and flanks the green; bunker behind; slopes toward the water'],
+['Nandina',4,440,10,'Tight tree-lined fairway; bunkers left of green; sloped surface'],
+['Holly',4,465,45,'Two bunkers left in landing zone; uphill; two-tiered green with bunkers']],
+ wt:(i,L)=>({10:[{x:-26,y:L-24,rx:16,ry:24}],11:[{x:0,y:L-26,rx:48,ry:7}],12:[{x:0,y:L-30,rx:46,ry:7}],14:[{x:0,y:L-28,rx:30,ry:10}],15:[{x:-12,y:L-26,rx:34,ry:14}]})[i],
+ ov:{0:b=>{b[0]={x:-18,y:300,rx:7,ry:16}}}},
+{id:'pine',name:'Pinehurst No. 2',loc:'Pinehurst, North Carolina',seed:23,tx:60,tl:'Native sand and wiregrass',wr:[3,13],t:[58,72],sky:['clear','partly cloudy','hazy sunshine'],when:'7:30 AM',blurb:'The U.S. Open anchor site: domed greens and sandy waste areas',h:PIN,
+ wt:(i,L)=>i==15?[{x:-34,y:200,rx:14,ry:11}]:null},
+{id:'peb',name:'Pebble Beach Golf Links',loc:'Pebble Beach, California',seed:37,tx:45,tl:'Heavy rough',wr:[6,20],t:[52,62],sky:['marine layer fog','partly cloudy','clear'],when:'7:50 AM',blurb:'Clifftop holes on Carmel Bay with small, firm greens',h:PEB,
+ wt:(i,L)=>{const lf=()=>({x:-62,y:L*.58,rx:24,ry:L*.4}),rt=()=>({x:62,y:L*.58,rx:24,ry:L*.4});return({3:[rt()],4:[lf()],5:[lf()],6:[{x:-38,y:L,rx:16,ry:26},{x:38,y:L,rx:16,ry:26},{x:0,y:L+24,rx:30,ry:8}],7:[{x:-5,y:L-95,rx:62,ry:34}],8:[rt()],9:[rt()],16:[lf()],17:[lf()]})[i]}},
+{id:'sta',name:'The Old Course',loc:'St Andrews, Scotland',seed:41,tx:70,tl:'Gorse and heavy rough',wr:[5,20],t:[48,58],sky:['cool and breezy','overcast','showers clearing'],when:'7:20 AM',blurb:'The home of golf: wide fairways, pot bunkers, and wind',h:STA,
+ ov:{13:(b,L)=>{b.push({x:-5,y:420,rx:14,ry:18})},16:(b,L)=>{b.push({x:-14,y:L-9,rx:8,ry:6})}}},
+{id:'tf',name:'The Tree Farm',loc:'Aiken County, South Carolina',seed:29,tx:40,tl:'Trees',wr:[3,15],t:[50,64],sky:['clear','clear','partly cloudy','high overcast'],when:'7:42 AM',blurb:'Private Zac Blair design: sandy ground and pine-lined holes',h:[['',3,182,2,'Bunkers guard the green; exposed tee shot, so wind matters'],
+['',4,414,-8,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',4,514,6,'Sandy bunkers and pine-lined edges; firm, fast ground; plays long'],
+['',3,270,-4,'Very long par 3 and the hardest hole on the card; bunkers around the green'],
+['',4,363,10,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',4,450,-12,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',4,328,4,'Short par 4; room to take a risk off the tee but bunkers punish a miss'],
+['',4,509,-10,'Sandy bunkers and pine-lined edges; firm, fast ground; plays long'],
+['',5,514,12,'Long hole; bunkers in the landing zone; a good drive keeps the green in reach'],
+['',4,410,-6,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',4,468,8,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',4,497,-14,'Sandy bunkers and pine-lined edges; firm, fast ground; plays long'],
+['',5,632,5,'Longest hole on the course; bunkers down the way; play it as a true three-shot hole'],
+['',4,431,-4,'Sandy bunkers and pine-lined edges; firm, fast ground'],
+['',3,221,0,'Redan-style green: firm, slopes away to the back left; run the ball in from the front right'],
+['',5,619,-18,'Dramatic land and a punchbowl green that funnels balls toward the middle; long par 5'],
+['',3,161,3,'Shortest hole on the course; small target, so wind and club choice matter'],
+['',4,313,6,'Short par 4; drivable for some, but bunkers and trouble guard the green']]},
+{id:'oak',name:'Oakmont Country Club',loc:'Oakmont, Pennsylvania',seed:53,tx:50,tl:'Heavy rough',wr:[3,13],t:[58,72],sky:['humid and hazy','partly cloudy','overcast'],when:'7:35 AM',st:[13.5,14.5],fw:15,blurb:'Brutally fast, sloped greens and deep bunkers: a U.S. Open giant',h:OAK,
+ ov:{2:b=>{b.push({x:22,y:285,rx:14,ry:30})},3:b=>{b.push({x:-22,y:290,rx:14,ry:30})}}},
+{id:'beth',name:'Bethpage Black',loc:'Farmingdale, New York',seed:61,tx:42,tl:'Deep rough',wr:[4,16],t:[52,68],sky:['clear','partly cloudy','breezy and bright'],when:'7:15 AM',fw:13,blurb:'A brawling public-course major venue with narrow fairways',h:BETH,
+ ov:{17:(b,L)=>{b.push({x:-24,y:270,rx:10,ry:40},{x:24,y:285,rx:10,ry:40})}}},
+{id:'pv',name:'Pine Valley Golf Club',loc:'Clementon, New Jersey',seed:71,tx:55,tl:'Sandy waste and scrub',wr:[3,13],t:[50,64],sky:['clear','cool and crisp','partly cloudy'],when:'7:40 AM',fw:14,blurb:'Island fairways in a sea of sand, often ranked the best course in the world',h:PV,
+ wt:(i,L)=>({4:[{x:0,y:L-60,rx:42,ry:35}],13:[{x:0,y:L-55,rx:40,ry:32}]})[i],
+ ov:{6:(b,L)=>{b.push({x:0,y:360,rx:28,ry:55})}}}];
+let H,C;
+const water=h=>!!(C.wt&&C.wt(h,300));
+const BASE=[['Lob wedge',60],['Sand wedge',85],['Gap wedge',105],['Pitching wedge',120],['9-iron',135],['8-iron',145],['7-iron',155],['6-iron',167],['5-iron',180],['4-iron',195],['Hybrid',210],['5-wood',230],['3-wood',250]];
+const BAGS=[
+{id:'low',n:'Low Handicap',d:'Balanced full set',f:1,dr:290,t3:262,tw:'3-wood',ls:1,ds:1,wm:1,keep:null,ch:['Lob wedge','Pitching wedge','Gap wedge']},
+{id:'tour',n:'Tour Pro',d:'Longer and straighter than everyone',f:1.1,dr:305,t3:276,tw:'3-wood',ls:.75,ds:.8,wm:1,keep:null,ch:['Lob wedge','Pitching wedge','Gap wedge']},
+{id:'wk',n:'Weekend Player',d:'Shorter and wilder, with no 4-iron or lob wedge',f:.87,dr:245,t3:222,tw:'3-wood',ls:1.4,ds:1.25,wm:1,keep:['Sand wedge','Gap wedge','Pitching wedge','9-iron','8-iron','7-iron','6-iron','5-iron','Hybrid','5-wood','3-wood'],ch:['Sand wedge','Pitching wedge','Gap wedge']},
+{id:'beg',n:'Beginner Starter Set',d:'Forgiving but short: 5-wood, hybrid, 6-, 8-, 9-iron, PW, SW',f:.75,dr:200,t3:175,tw:'Hybrid',ls:1.9,ds:1.5,wm:1,keep:['5-wood','Hybrid','6-iron','8-iron','9-iron','Pitching wedge','Sand wedge'],ch:['Sand wedge','Pitching wedge','9-iron']},
+{id:'half',n:'Half Set',d:'Walking bag: 5-wood, 5-, 7-, 9-iron, PW, SW. Expect awkward gaps',f:1,dr:285,t3:238,tw:'5-wood',ls:1.1,ds:1.1,wm:1,keep:['5-wood','5-iron','7-iron','9-iron','Pitching wedge','Sand wedge'],ch:['Sand wedge','Pitching wedge','Sand wedge']},
+{id:'links',n:'Links Bag',d:'Low-flight hybrids and long irons, so wind matters less',f:.96,dr:272,t3:240,tw:'Hybrid',ls:1,ds:1,wm:.55,keep:['Sand wedge','Gap wedge','Pitching wedge','9-iron','8-iron','7-iron','6-iron','5-iron','4-iron','Hybrid','5-wood'],ch:['Sand wedge','Pitching wedge','Gap wedge']},
+{id:'cannon',n:'Long-Drive Cannon',d:'Enormous driver, but wild with everything',f:1.03,dr:335,t3:285,tw:'3-wood',ls:1.5,ds:1.1,wm:1,keep:null,ch:['Lob wedge','Pitching wedge','Gap wedge']}];
+BAGS.forEach(b=>b.cl=BASE.filter(c=>!b.keep||b.keep.includes(c[0])).map(c=>[c[0],Math.round(c[1]*b.f)]));
+let B=BAGS[0];
+const cp=e=>B.cl.find(c=>c[1]>=e)||B.cl[B.cl.length-1],club=e=>cp(e)[0],gp=e=>1+Math.max(0,cp(e)[1]-e-8)/50;
+const g=()=>{let u=0;while(!u)u=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(6.2832*Math.random())};
+const R=(a,b)=>a+Math.random()*(b-a),P=a=>a[Math.floor(Math.random()*a.length)],rn=Math.round;
+let COURSE,SEED;
+const LN={trees:'Trees',tee:'Tee box',fairway:'Fairway',rough:'Rough',bunker:'Bunker',fringe:'First cut',green:'Green'};
+const LQ={trees:'60% – branches in the way',tee:'100% clean, teed up',fairway:'100% clean',rough:'80% – ball sitting down',bunker:'85% – clean sand',fringe:'95% clean',green:'Clean, true surface'};
+const sc=s=>s==0?'E':(s>0?'+':'')+s;
+let S,app=document.getElementById('app');
+function wind(){const sp=rn(R(...C.wr)),d=P(['head','tail','L','R']);
+ return{sp,d,hw:d=='head'?sp:d=='tail'?-sp:0,cr:d=='L'?sp:d=='R'?-sp:0,
+ t:{head:'headwind',tail:'tailwind',L:'crosswind from the left',R:'crosswind from the right'}[d]}}
+function pick(id){C=COURSES.find(c=>c.id==id);H=C.h;COURSE=C.id;SEED=C.seed;LN.trees=C.tl;for(const k in LC)delete LC[k];start()}
+function start(){const T=rn(R(...C.t)),sky=P(C.sky);S={x:0,y:0,px:0,path:[],h:0,st:0,tot:0,card:[],lie:'tee',d:H[0][2],ft:0,w:wind(),last:null,wx:`${C.when}, ${T}°F, ${sky}. Greens rolling about ${rn(R(...(C.st||[11,13.5]))*10)/10} on the Stimpmeter. Bag: ${B.n}.`,over:false};nh();render()}
+function setBag(id){B=BAGS.find(b=>b.id==id);menu()}
+function menu(){S=null;app.innerHTML=`<div class="top"><div><h1>Golf Course Simulator</h1><div style="color:var(--mut)">Choose your bag, pick a course, read the conditions, and choose your tactics shot by shot.</div></div></div><h2>1. Your bag</h2><div class="bags">`+BAGS.map(b=>`<button class="opt" style="border-left-color:${b.id==B.id?'var(--gold)':'var(--line)'}" onclick="setBag('${b.id}')"><b>${b.n}${b.id==B.id?' (selected)':''}</b><small>${b.d}. Driver about ${b.dr} yds.</small></button>`).join('')+`</div><h2 style="margin-top:18px">2. Pick a course</h2>`+COURSES.map(c=>`<button class="opt" onclick="pick('${c.id}')"><b>${c.name} · ${c.loc}</b><small>Par ${c.h.reduce((a,x)=>a+x[1],0)} · ${c.h.reduce((a,x)=>a+x[2],0).toLocaleString()} yds · ${c.blurb}</small></button>`).join('')+`<p style="color:var(--mut);font-size:.85rem;margin-top:14px">Pars and yardages come from published scorecards. Hazard layouts, elevation changes, and hole features are schematic approximations, not surveys. Bags change your distances, accuracy, wind sensitivity, and the clubs you can choose from.</p>`}
+const eff=()=>S.d+H[S.h][3]/3+S.w.hw*.01*B.wm*S.d;
+function opts(){const{d,lie}=S,par=H[S.h][1],e=eff(),mc=B.cl[B.cl.length-1];
+ if(lie=='green')return[
+ {t:'putt',m:1.25,tp:.14,l:'Aggressive',c:'Putter',x:'Firm and committed at the cup, taking out the break. A miss can run 4–8 ft past.'},
+ {t:'putt',m:.8,tp:.02,l:'Conservative',c:'Putter',x:'Lag it with pace to die at the hole. Goal is a tap-in; very low three-putt risk.'},
+ {t:'putt',m:1,tp:.06,l:'Creative',c:'Putter',x:'Play extra break from the high side and let it feed in on soft pace.'}];
+ if(d<=60)return[
+ {t:'chip',c:B.ch[0],lo:2,hi:10,bad:.18,l:'Aggressive',x:'High, soft shot right at the flag. Tap-in range if it comes off, long putt if you catch it thin or fat.'},
+ {t:'chip',c:B.ch[1],lo:5,hi:14,bad:.05,l:'Conservative',x:'Low bump-and-run to the middle of the green. Safe, leaves a medium putt.'},
+ {t:'chip',c:B.ch[2],lo:3,hi:12,bad:.1,l:'Creative',x:'Checking spinner with a slight draw that works toward the flag.'}];
+ if(lie=='tee'&&par>3){const cap=S.d-30,a=Math.min(B.dr,cap),b=Math.min(B.t3,cap),c=Math.min(B.dr*.98,cap),sh=P(['draw','fade']);return[
+ {t:'full',adv:a,ds:.04,ls:.065,risk:.12,c:'Driver',l:'Aggressive',x:'Driver at the edge of the trouble for the most distance. Big reward, but a miss finds a bunker or the trees.'},
+ {t:'full',adv:b,ds:.035,ls:.045,risk:.03,c:B.tw,l:'Conservative',x:'Center of the fairway, about '+rn(b)+' yards. Widest landing area, longer approach.'},
+ {t:'full',adv:c,ds:.04,ls:.05,risk:.07,c:'Driver',shape:sh,l:'Creative',x:`Controlled ${sh} using the wind and slope. A balance of distance and accuracy.`}]}
+ if(e>mc[1]){const f=Math.min(mc[1],d-15);return[
+ {t:'full',adv:f,ds:.05,ls:.1,risk:.25,c:mc[0],l:'Aggressive',x:'Go for it with your longest club. A perfect strike gets close; a miss is a big recovery.'},
+ {t:'full',adv:d-100,ds:.04*gp(d-100),ls:.05*gp(d-100),risk:.03,c:club(d-100),l:'Conservative',x:'Lay up to a full-wedge distance (about 100 yards) in the fairway.'},
+ {t:'full',adv:d-75,ds:.045*gp(d-75),ls:.06*gp(d-75),risk:.05,c:club(d-75),shape:'punch',l:'Creative',x:'Low punch that skips and runs out, leaving about 75 yards in.'}]}
+ const cl=club(e),k=gp(e),w=water(S.h);return[
+ {t:'full',adv:d,ds:.045*k,ls:.075*k,risk:.1,c:cl,l:'Aggressive',x:'Straight at the pin. A good strike is a birdie look; a miss goes in a bunker'+(w?' or the water.':'.')},
+ {t:'full',adv:d-6,ds:.04*k,ls:.055*k,risk:.04,c:cl,l:'Conservative',x:'Aim for the middle of the green. Takes trouble out of play but leaves a longer putt.'},
+ {t:'full',adv:d,ds:.05*gp(e*.94),ls:.065*gp(e*.94),risk:.08,c:club(e*.94),shape:P(['draw','fade','hold-off']),l:'Creative',x:'Shaped flight that works with the wind and holds its line.'}]}
+const LC={};
+const inE=(e,x,y)=>((x-e.x)/e.rx)**2+((y-e.y)/e.ry)**2<=1;
+function LAY(i){if(LC[i])return LC[i];const par=H[i][1],L=H[i][2];let a=(SEED+i*7919)>>>0;
+ const r=()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296};
+ const b=[],s=r()<.5?-1:1;
+ if(par>3){const zy=Math.min(285,L-70);b.push({x:s*(21+r()*5),y:zy+r()*25-10,rx:7,ry:14});
+  if(r()<.6)b.push({x:-s*(21+r()*5),y:zy-35+r()*20,rx:7,ry:12});
+  if(par==5)b.push({x:(r()<.5?-1:1)*(20+r()*5),y:L-125+r()*20,rx:7,ry:12})}
+ [225,315,135,45,90,180,0].sort(()=>r()-.5).slice(0,2+Math.floor(r()*3)).forEach(g2=>{const q=g2*Math.PI/180;b.push({x:20*Math.cos(q),y:L+20*Math.sin(q),rx:7,ry:6})});
+ if(C.ov&&C.ov[i])C.ov[i](b,L);
+ return LC[i]={b,w:(C.wt&&C.wt(i,L))||[]}}
+function place(x,y){const L=H[S.h][2],dg=Math.hypot(S.px-x,L-y),lay=LAY(S.h);
+ for(const w of lay.w)if(inE(w,x,y))return{k:'water',h:w};
+ if(dg<=15)return{k:'green'};
+ for(const b of lay.b)if(inE(b,x,y))return{k:'bunker',h:b};
+ if(dg<=21)return{k:'fringe'};
+ if(y>=0&&y<=L-20&&Math.abs(x)<=(C.fw||17))return{k:'fairway'};
+ return{k:Math.abs(x)>C.tx?'trees':'rough'}}
+function mv(x,y){S.x=x;S.y=y;S.path.push({x,y})}
+function sg(ft,push){const a=R(0,6.283),L=H[S.h][2],r=ft/3;S.x=S.px+r*Math.cos(a);S.y=L+r*Math.sin(a);S.lie='green';S.ft=ft;S.d=0;if(push)S.path.push({x:S.x,y:S.y})}
+function nh(){S.x=0;S.y=0;S.px=rn(R(-5,5));S.path=[{x:0,y:0}]}
+function shot(o,note){const L=S.lie,Hh=H[S.h],Ln=Hh[2],m={tee:1,fairway:1,rough:.92,bunker:.82,fringe:1,trees:.7}[L],sm={tee:1,fairway:1,rough:1.35,bunker:1.6,fringe:1.1,trees:1.9}[L];
+ S.st++;const sh=o.shape?(o.shape=='punch'?'a low punch':'a '+o.shape):'a stock shot',intro=`${note?note+' ':''}You pull the ${o.c} and commit to ${sh}.`;
+ if(o.t=='putt'){const ft=S.ft,p=ft<=3?Math.min(.98,.92*o.m):Math.min(.95,Math.exp(-ft/11)*o.m),r=Math.random();
+  if(r<p)return hole(`${intro} The ball tracks the line, catches the edge of the break, and drops dead center.`);
+  const three=r<p+o.tp,left=three?R(6,12):R(...(o.m>1?[3,8]:o.m<1?[1,3]:[2,5]))*(ft>25?1.6:1);sg(Math.max(1,rn(left)),0);
+  return fin(`${intro} `+(three?'It runs well past the hole on the sloped surface and leaves a testing comebacker.':P(['It slides by the edge and trickles to a stop.','It lips out and spins away from the cup.','It dies just short of the hole.']))+` You have about ${S.ft} ft left.`)}
+ if(o.t=='chip'){const k=(L=='bunker'||L=='rough'||L=='trees')?1.5:1;
+  if(Math.random()<.04)return hole(`${intro} The ball lands soft, takes one hop, and tracks into the cup for a chip-in.`);
+  if(Math.random()<o.bad*k*B.ds){sg(rn(R(18,35)),1);return fin(`${intro} You don't catch it cleanly and it comes up well short of the flag, leaving a long putt of about ${S.ft} ft.`)}
+  sg(Math.max(2,rn(R(o.lo,o.hi)*k)),1);return fin(`${intro} It lands on the green and releases toward the hole, stopping about ${S.ft} ft away.`)}
+ const dx=S.px-S.x,dy=Ln-S.y,d0=Math.hypot(dx,dy),ux=dx/d0,uy=dy/d0;
+ const adv=o.adv*m*(1+g()*o.ds*sm*B.ds)*(1-S.w.hw*.01*B.wm),lat=g()*o.ls*o.adv*sm*B.ls+S.w.cr*.008*B.wm*o.adv;
+ const nx=S.x+ux*adv+uy*lat,ny=Math.min(Ln+60,Math.max(-8,S.y+uy*adv-ux*lat)),r=place(nx,ny);
+ const apex=rn(R(70,115)),wd=S.w.cr?`The ${S.w.sp} mph breeze leans on it from the ${S.w.d=='L'?'left':'right'}.`:S.w.hw>0?`The ${S.w.sp} mph headwind knocks it down a touch.`:`The ${S.w.sp} mph breeze behind it adds a little carry.`,lead=`${intro} The ball peaks near ${apex} feet. ${wd} `;
+ if(r.k=='water'){S.st++;let bx=nx,by=ny,t=0;while(inE(r.h,bx,by)&&t++<90){bx-=ux*3;by-=uy*3}
+  const k=place(bx,by).k;S.lie=k=='green'?'fringe':(k=='bunker'||k=='water')?'rough':k;mv(bx,by);S.d=Math.max(5,rn(Math.hypot(S.px-bx,Ln-by)));
+  return fin(`${lead}It can't clear the water and splashes down. After a one-stroke penalty you drop about ${S.d} yards from the pin.`)}
+ mv(nx,ny);const dg=Math.hypot(S.px-nx,Ln-ny);S.lie=r.k;
+ if(r.k=='green'){S.ft=Math.max(3,rn(dg*3));S.d=0;return fin(`${lead}It lands ${adv>d0+8?'just past the flag':'on the putting surface'} and settles about ${S.ft} ft from the hole.`)}
+ S.d=Math.max(5,rn(dg));
+ const sd=Math.abs(nx)<5?'on the center line':nx<0?'left of the line':'right of the line',
+ w=r.k=='bunker'?`in the ${r.h.x<0?'left':'right'} ${r.h.y<Ln-60?'fairway':'greenside'} bunker`:{fairway:'in the fairway',rough:'in the rough',fringe:'in the first cut',trees:'in the trees'}[r.k]+', '+sd;
+ return fin(`${lead}It finishes ${w}, ${S.d} yards from the pin.`)}
+function ahead(){const L=H[S.h][2],lay=LAY(S.h);if(S.lie=='green')return['On the green: pace matters as much as line'];
+ const o=[...lay.w.map(e=>[e,'Water']),...lay.b.map(e=>[e,e.y<L-60?'Fairway bunker':'Greenside bunker'])];
+ const l=o.filter(([e])=>e.y+e.ry>S.y+2).map(([e,t])=>[Math.hypot(e.x-S.x,e.y-S.y),e,t]).filter(a=>a[0]<420).sort((a,b)=>a[0]-b[0]).slice(0,5)
+ .map(([d,e,t])=>`${t}, ${e.x<-6?'left':e.x>6?'right':'center'}: ${Math.max(1,rn(d-e.ry))}–${rn(d+e.ry)} yds out`);
+ l.push(`${C.tl} beyond about ${C.tx} yards off the center line`);return l}
+function map(){const L=H[S.h][2],lay=LAY(S.h),gv=S.lie=='green',W=220,xs=gv?3.2:1.8,ylo=gv?L-45:-12,yhi=gv?L+32:L+45,ys=gv?3.2:Math.min(.9,420/(yhi-ylo)),Hh=Math.round((yhi-ylo)*ys),
+ X=x=>+(W/2+x*xs).toFixed(1),Y=y=>+((yhi-y)*ys).toFixed(1),
+ el=(e,c)=>`<ellipse cx="${X(e.x)}" cy="${Y(e.y)}" rx="${+(e.rx*xs).toFixed(1)}" ry="${+(e.ry*ys).toFixed(1)}" fill="${c}"/>`;
+ let s=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Map of hole ${S.h+1} with hazards and your shots" style="width:100%;max-width:440px;display:block;margin:12px auto 4px;border-radius:4px"><rect width="${W}" height="${Hh}" fill="var(--rough)"/><rect width="${Math.max(0,X(-C.tx))}" height="${Hh}" fill="var(--tree)"/><rect x="${X(C.tx)}" width="${Math.max(0,W-X(C.tx))}" height="${Hh}" fill="var(--tree)"/>`;
+ s+=`<rect x="${X(-(C.fw||17))}" y="${Y(L-20)}" width="${2*(C.fw||17)*xs}" height="${(L-20)*ys}" rx="8" fill="var(--fw)"/>`+el({x:0,y:L,rx:15,ry:15},'var(--gr)');
+ lay.b.forEach(b=>s+=el(b,'var(--sand)'));lay.w.forEach(w=>s+=el(w,'var(--wat)'));
+ if(!gv){[100,150,200].forEach(n=>{if(L-n>5)s+=`<line x1="0" x2="${W}" y1="${Y(L-n)}" y2="${Y(L-n)}" stroke="var(--ink)" stroke-opacity=".35" stroke-dasharray="3 3"/><text x="3" y="${Y(L-n)-2}" font-size="8" fill="var(--ink)">${n}</text>`});s+=`<rect x="${X(-4)}" y="${Y(0)-2}" width="${8*xs}" height="4" fill="var(--ink)"/>`}
+ s+=`<polyline points="${S.path.map(p=>X(p.x)+','+Y(p.y)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="2 2"/>`;
+ S.path.forEach((p,i)=>{if(i)s+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="4.5" fill="var(--card)" stroke="var(--ink)"/><text x="${X(p.x)}" y="${+Y(p.y)+2.8}" font-size="7" text-anchor="middle" fill="var(--ink)">${i}</text>`});
+ s+=`<line x1="${X(S.px)}" y1="${Y(L)}" x2="${X(S.px)}" y2="${Y(L)-16}" stroke="var(--ink)"/><path d="M${X(S.px)} ${Y(L)-16}l9 3.5l-9 3.5z" fill="var(--red)"/><circle cx="${X(S.x)}" cy="${Y(S.y)}" r="5" fill="var(--gold)" stroke="var(--ink)" stroke-width="1.5"/></svg>`;
+ return s+`<div style="font-size:.8rem;color:var(--mut);text-align:center;margin-bottom:10px">Gold dot: your ball · numbers: your shots · dashed lines: yards to the pin · schematic, not to scale</div>`}
+function fin(t){S.last={t,sum:`Hole ${S.h+1} strokes so far: ${S.st} · Score: ${sc(S.tot)}`};S.over=false;render()}
+function hole(t){const par=H[S.h][1],df=S.st-par,nm=S.st==1?'Hole in one!':({'-3':'Albatross','-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Double bogey'}[df]||(df>0?'+'+df:df)),
+ hn=S.h+1;S.card.push(S.st);S.tot+=df;
+ S.last={t,sum:`Hole ${hn} complete: ${nm} (${S.st}) · Score: ${sc(S.tot)}`};
+ if(S.h==17){S.over=true;render();return}
+ S.h++;S.st=0;S.lie='tee';S.d=H[S.h][2];S.w=wind();nh();render()}
+function pickOpt(i){const o=opts()[i];shot(o)}
+function custom(){const v=document.getElementById('cu').value.toLowerCase();if(!v.trim())return;
+ const o=opts(),i=/aggress|pin|attack|go for|driver|firm/.test(v)?0:/safe|conserv|lay|lag|iron|wood|center|middle/.test(v)?1:2;
+ shot(o[i],`You go with your own plan ("${document.getElementById('cu').value.trim()}") and it plays like the ${o[i].l.toLowerCase()} option.`)}
+function render(){const h=H[S.h],par=h[1],o=S.over?[]:opts(),e=eff(),ft=S.lie=='green';
+ const tt=S.card.reduce((a,b)=>a+b,0);
+ let html=`<div class="top"><div><h1>${C.name}</h1><div style="color:var(--mut)">${S.wx} · <a href="#" onclick="menu();return false" style="color:var(--grn)">Change course</a></div></div><div class="score ${S.tot<0?'neg':''}">${sc(S.tot)}<small>Thru ${S.card.length}</small></div></div>
+ <div class="strip">${H.map((x,i)=>`<div class="${i==S.h&&!S.over?'cur':''}"><b>${i+1}</b>${S.card[i]??'·'}</div>`).join('')}</div>`;
+ if(S.last)html+=`<div class="card res"><h2>Shot result</h2><p>${S.last.t}</p><div class="sum ${S.last.sum.includes('-')&&/Birdie|Eagle|Albatross|one/.test(S.last.sum)?'neg':''}">${S.last.sum}</div></div>`;
+ if(S.over){const pt=H.reduce((a,x)=>a+x[1],0);
+  html+=`<div class="card"><h2>Round complete</h2><p>Final: ${tt} strokes (${sc(S.tot)}, par ${pt}).</p><button class="go" onclick="start()">Play again</button> <button class="go" onclick="menu()">Change course</button></div>`}
+ else html+=`<div class="card"><h2>Hole ${S.h+1}: ${h[0]} · Par ${par} · ${h[2]} yds</h2>
+ <div class="grid"><div><span>Ball location</span>${LN[S.lie]}</div><div><span>Stroke</span>${S.st+1}</div>
+ <div><span>Distance to pin</span>${ft?S.ft+' ft':S.d+' yds'+(S.d>60?` (plays like ${rn(e)})`:'')}</div><div><span>Lie quality</span>${LQ[S.lie]}</div>
+ <div><span>Wind</span>${S.w.sp} mph ${S.w.t}</div><div><span>Elevation</span>${h[3]==0?'Flat':Math.abs(h[3])+' ft '+(h[3]>0?'uphill':'downhill')+' overall'}</div>
+ <div class="w"><span>Hazards ahead</span><ul>${ahead().map(s=>`<li>${s}</li>`).join('')}</ul><div style="color:var(--mut);font-size:.85rem;margin-top:6px">${h[4]}</div></div></div>
+ ${map()}<strong>Choose your shot</strong>${o.map((x,i)=>`<button class="opt" onclick="pickOpt(${i})"><b>Option ${'ABC'[i]}: ${x.l} – ${x.c}</b><small>${x.x}</small></button>`).join('')}
+ <div class="cu"><input id="cu" placeholder="Option D: type your own strategy" aria-label="Custom strategy" onkeydown="if(event.key=='Enter')custom()"><button class="go" onclick="custom()">Play it</button></div></div>`;
+ app.innerHTML=html}
+menu();
+</script></body></html>
